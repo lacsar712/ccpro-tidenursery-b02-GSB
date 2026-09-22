@@ -15,5 +15,7 @@ class FeedEvent(Base):
     feed_type: Mapped[str] = mapped_column(String(64), nullable=False)
     amount_kg: Mapped[float] = mapped_column(Float, nullable=False)
     operator_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    # 可选混喂比例百分数：填写时为 1..100 的整数；为空表示单喂
+    mix_ratio_pct: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     pond: Mapped["Pond"] = relationship("Pond", back_populates="feed_events")

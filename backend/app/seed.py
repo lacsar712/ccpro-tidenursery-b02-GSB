@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from app.auth import hash_password
 from app.database import SessionLocal
 from app.models.feed_event import FeedEvent
+from app.models.feed_type import FeedType
 from app.models.hatchery import Hatchery
 from app.models.pond import Pond
 from app.models.user import User
@@ -77,6 +78,15 @@ def seed() -> None:
             db.flush()
 
             now = datetime.now(timezone.utc)
+
+            # 全场饵料类型白名单：至少两种启用类型 + 一种已停用类型
+            ft_rotifer = FeedType(name="轮虫", is_active=True, max_amount_kg=5.0)
+            ft_artemia = FeedType(name="卤虫无节幼体", is_active=True, max_amount_kg=3.0)
+            ft_algae = FeedType(name="微藻饲料", is_active=True, max_amount_kg=10.0)
+            ft_copepod = FeedType(name="桡足类", is_active=False, max_amount_kg=2.0)
+            db.add_all([ft_rotifer, ft_artemia, ft_algae, ft_copepod])
+            db.flush()
+
             db.add_all(
                 [
                     WaterSample(
@@ -112,6 +122,7 @@ def seed() -> None:
                         feed_type="轮虫",
                         amount_kg=1.2,
                         operator_name="水质技术员",
+                        mix_ratio_pct=None,
                     ),
                     FeedEvent(
                         pond_id=p1.id,
@@ -119,6 +130,7 @@ def seed() -> None:
                         feed_type="卤虫无节幼体",
                         amount_kg=0.8,
                         operator_name="场长",
+                        mix_ratio_pct=60,
                     ),
                     FeedEvent(
                         pond_id=p3.id,
@@ -126,11 +138,28 @@ def seed() -> None:
                         feed_type="微藻饲料",
                         amount_kg=2.5,
                         operator_name="水质技术员",
+                        mix_ratio_pct=None,
+                    ),
+                    # 停用类型的旧投喂仍保留可读，但不可再新建或改类型为它
+                    FeedEvent(
+                        pond_id=p2.id,
+                        fed_at=now - timedelta(days=10),
+                        feed_type="桡足类",
+                        amount_kg=1.0,
+                        operator_name="场长",
+                        mix_ratio_pct=None,
                     ),
                 ]
             )
             db.commit()
             print("Seed data inserted.")
+            print(
+                "失败样例(应返回 409):\n"
+                "  1) 超最大单次千克: POST /api/feed-events "
+                '{"pondId":1,"fedAt":"<iso>","feedType":"轮虫","amountKg":9.9,"operatorName":"x"} '
+                "(轮虫上限 5kg)\n"
+                "  2) 停用后再用: 以 feedType=\"桡足类\" 新建, 或把记录改类型为 \"桡足类\""
+            )
         else:
             print("Seed skipped (data exists).")
     finally:

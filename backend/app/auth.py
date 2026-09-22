@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Callable, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -55,3 +55,17 @@ def get_current_user(
     if not user:
         raise credentials_exception
     return user
+
+
+def require_role(*roles: str) -> Callable[..., User]:
+    """生成只允许指定角色的依赖。"""
+
+    def _checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="权限不足",
+            )
+        return current_user
+
+    return _checker

@@ -38,6 +38,10 @@ export default function Dashboard() {
             {stats ? stats.feedKgLast7d.toFixed(2) : '—'}
           </div>
         </div>
+        <div className="stat-card">
+          <div className="stat-label">启用饵料类型数</div>
+          <div className="stat-value">{stats?.activeFeedTypeCount ?? '—'}</div>
+        </div>
       </div>
     </div>
   )

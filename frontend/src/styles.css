@@ -200,6 +200,74 @@ select {
   border: 1px solid var(--line);
 }
 
+.btn.ghost.danger {
+  color: var(--danger);
+  border-color: rgba(196, 69, 54, 0.35);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.link {
+  border: none;
+  background: none;
+  color: var(--sea-mid);
+  padding: 0 6px;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.btn.tiny {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-banner {
+  background: var(--sea-mist);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--sea-mid);
+}
+
+.inline-edit {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.inline-edit input {
+  padding: 6px 8px;
+  width: 110px;
+}
+
+.row-disabled td {
+  color: var(--muted);
+}
+
+.tag-muted {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #edf0f2;
+  color: #607078;
+}
+
+.row-actions {
+  white-space: nowrap;
+}
+
 .table-wrap {
   overflow: auto;
 }
@@ -225,7 +293,7 @@ th {
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
   margin-top: 20px;
 }

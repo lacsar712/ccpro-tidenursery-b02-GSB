@@ -1,17 +1,52 @@
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import text
+
 from app.auth import hash_password
 from app.database import SessionLocal
 from app.models.feed_event import FeedEvent
+from app.models.feed_type import FeedType
 from app.models.hatchery import Hatchery
 from app.models.pond import Pond
 from app.models.user import User
 from app.models.water_sample import WaterSample
 
 
+def ensure_fresh_install_columns(db) -> None:
+    """对旧快照建过的库做幂等补列(create_all 不会给已存在的表加列)。
+
+    用 inspector 判断列是否存在,兼容 PostgreSQL 与旧版 SQLite。
+    """
+    from sqlalchemy import inspect
+
+    inspector = inspect(db.bind)
+    existing = {c["name"] for c in inspector.get_columns("feed_events")}
+    if "mix_ratio_pct" not in existing:
+        db.execute(text("ALTER TABLE feed_events ADD COLUMN mix_ratio_pct INTEGER"))
+        db.commit()
+
+
+def seed_feed_types(db) -> None:
+    """全场饵料类型白名单:至少两种启用类型,另含一种已停用类型。"""
+    if db.query(FeedType).count() > 0:
+        return
+    db.add_all(
+        [
+            FeedType(name="轮虫", is_active=True, max_amount_kg=3.0),
+            FeedType(name="卤虫无节幼体", is_active=True, max_amount_kg=2.0),
+            FeedType(name="微藻饲料", is_active=True, max_amount_kg=5.0),
+            # 已停用类型:旧投喂仍可读,但新投喂/改类型不得再用
+            FeedType(name="蛋黄浆", is_active=False, max_amount_kg=0.5),
+        ]
+    )
+    db.commit()
+
+
 def seed() -> None:
     db = SessionLocal()
     try:
+        ensure_fresh_install_columns(db)
+
         if db.query(User).count() == 0:
             db.add_all(
                 [
@@ -30,6 +65,8 @@ def seed() -> None:
                 ]
             )
             db.commit()
+
+        seed_feed_types(db)
 
         if db.query(Hatchery).count() == 0:
             h1 = Hatchery(
@@ -112,6 +149,7 @@ def seed() -> None:
                         feed_type="轮虫",
                         amount_kg=1.2,
                         operator_name="水质技术员",
+                        mix_ratio_pct=None,
                     ),
                     FeedEvent(
                         pond_id=p1.id,
@@ -119,6 +157,7 @@ def seed() -> None:
                         feed_type="卤虫无节幼体",
                         amount_kg=0.8,
                         operator_name="场长",
+                        mix_ratio_pct=60,
                     ),
                     FeedEvent(
                         pond_id=p3.id,
@@ -126,6 +165,16 @@ def seed() -> None:
                         feed_type="微藻饲料",
                         amount_kg=2.5,
                         operator_name="水质技术员",
+                        mix_ratio_pct=None,
+                    ),
+                    # 停用类型的历史投喂:停用后仍可在列表/看板中读到
+                    FeedEvent(
+                        pond_id=p2.id,
+                        fed_at=now - timedelta(days=20),
+                        feed_type="蛋黄浆",
+                        amount_kg=0.3,
+                        operator_name="场长",
+                        mix_ratio_pct=None,
                     ),
                 ]
             )

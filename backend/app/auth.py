@@ -55,3 +55,28 @@ def get_current_user(
     if not user:
         raise credentials_exception
     return user
+
+
+# 场长 / 水质技术员两种角色
+ROLE_ADMIN = "admin"
+ROLE_TECHNICIAN = "technician"
+
+
+def require_roles(*roles: str):
+    """生成角色校验依赖:不在允许角色内则 403。"""
+
+    def checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="当前账号无权执行该操作",
+            )
+        return current_user
+
+    return checker
+
+
+# 技术员及以上(场长也包含):可增改白名单
+require_staff = require_roles(ROLE_ADMIN, ROLE_TECHNICIAN)
+# 仅场长
+require_admin = require_roles(ROLE_ADMIN)

@@ -32,6 +32,13 @@ export type WaterSample = {
   notes?: string | null
 }
 
+export type FeedType = {
+  id: number
+  name: string
+  isActive: boolean
+  maxAmountKg: number
+}
+
 export type FeedEvent = {
   id: number
   pondId: number
@@ -39,6 +46,7 @@ export type FeedEvent = {
   feedType: string
   amountKg: number
   operatorName: string
+  mixRatioPct?: number | null
 }
 
 export type DashboardStats = {
@@ -46,4 +54,5 @@ export type DashboardStats = {
   quarantineCount: number
   samplesLast24h: number
   feedKgLast7d: number
+  activeFeedTypeCount: number
 }
